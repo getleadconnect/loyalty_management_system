@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Favicon Generator</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px;
+            background: #f3f4f6;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        canvas { 
+            border: 1px solid #ddd; 
+            margin: 10px;
+            display: inline-block;
+        }
+        h2 { color: #333; }
+        .size-label { 
+            display: block; 
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Loyalty System - Favicon</h1>
+        <p>Right-click and save each size as needed:</p>
+        
+        <div>
+            <span class="size-label">16x16 (favicon-16x16.png)</span>
+            <canvas id="canvas16" width="16" height="16"></canvas>
+        </div>
+        
+        <div>
+            <span class="size-label">32x32 (favicon-32x32.png)</span>
+            <canvas id="canvas32" width="32" height="32"></canvas>
+        </div>
+        
+        <div>
+            <span class="size-label">180x180 (apple-touch-icon.png)</span>
+            <canvas id="canvas180" width="180" height="180"></canvas>
+        </div>
+    </div>
+
+    <script>
+        function drawFavicon(canvas, size) {
+            const ctx = canvas.getContext('2d');
+            const scale = size / 32;
+            
+            // Background
+            ctx.fillStyle = '#0284c7';
+            const radius = 6 * scale;
+            ctx.beginPath();
+            ctx.moveTo(radius, 0);
+            ctx.lineTo(size - radius, 0);
+            ctx.quadraticCurveTo(size, 0, size, radius);
+            ctx.lineTo(size, size - radius);
+            ctx.quadraticCurveTo(size, size, size - radius, size);
+            ctx.lineTo(radius, size);
+            ctx.quadraticCurveTo(0, size, 0, size - radius);
+            ctx.lineTo(0, radius);
+            ctx.quadraticCurveTo(0, 0, radius, 0);
+            ctx.closePath();
+            ctx.fill();
+            
+            // White "L" letter
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${size * 0.6}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('L', size / 2, size / 2 + size * 0.05);
+        }
+        
+        // Generate all sizes
+        drawFavicon(document.getElementById('canvas16'), 16);
+        drawFavicon(document.getElementById('canvas32'), 32);
+        drawFavicon(document.getElementById('canvas180'), 180);
+    </script>
+</body>
+</html>
