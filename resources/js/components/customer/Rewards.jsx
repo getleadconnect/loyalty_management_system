@@ -76,22 +76,25 @@ const Rewards = () => {
       // First try to get from API for most up-to-date balance
       const response = await pointsAPI.getBalance();
       if (response.data && response.data.points_balance !== undefined) {
-        setUserBalance(response.data.points_balance || 0);
-        
+        const balance = parseFloat(response.data.points_balance) || 0;
+        setUserBalance(balance);
+
         // Update localStorage with fresh data
         const user = JSON.parse(localStorage.getItem('user') || '{}');
-        user.points_balance = response.data.points_balance;
+        user.points_balance = balance;
         localStorage.setItem('user', JSON.stringify(user));
       } else {
         // Fallback to localStorage if API fails
         const user = JSON.parse(localStorage.getItem('user') || '{}');
-        setUserBalance(user?.points_balance || 0);
+        const balance = parseFloat(user?.points_balance) || 0;
+        setUserBalance(balance);
       }
     } catch (err) {
       console.error('Failed to load user balance:', err);
       // Fallback to localStorage
       const user = JSON.parse(localStorage.getItem('user') || '{}');
-      setUserBalance(user?.points_balance || 0);
+      const balance = parseFloat(user?.points_balance) || 0;
+      setUserBalance(balance);
     }
   };
 
@@ -114,9 +117,9 @@ const Rewards = () => {
       toastr.warning('You need at least 1000 points balance before you can redeem rewards. Current balance: ' + userBalance);
       return;
     }
-    
+
     if (reward.points_required > userBalance) {
-      toastr.warning('Insufficient points to redeem this reward');
+      toastr.warning('Insufficient points to redeem this reward. You need ' + (reward.points_required - userBalance) + ' more points.');
       return;
     }
     setSelectedReward(reward);
@@ -160,7 +163,11 @@ const Rewards = () => {
     }
   };
 
-  const canAfford = (pointsRequired) => userBalance >= pointsRequired;
+  const canAfford = (pointsRequired) => {
+    const required = parseFloat(pointsRequired) || 0;
+    const balance = parseFloat(userBalance) || 0;
+    return required <= balance;
+  };
 
   if (loading) {
     return (
@@ -208,7 +215,7 @@ const Rewards = () => {
                   <Alert className="mt-3 bg-yellow-500/20 border-yellow-300 text-yellow-100">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription className="text-xs sm:text-sm">
-                      Minimum 1000 earned points required to redeem.
+                      Minimum 1000 points balance required to redeem. Current balance: {userBalance}
                     </AlertDescription>
                   </Alert>
                 )}
@@ -263,7 +270,9 @@ const Rewards = () => {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-1">
                       <Package className="h-3 w-3 text-gray-400" />
-                      <span className="text-xs text-gray-500">Stock: {reward.stock_quantity || 'Unlimited'}</span>
+                      <span className="text-xs text-gray-500">
+                        Stock: {reward.stock_quantity === 0 ? 'No Stock' : reward.stock_quantity === null ? 'Unlimited' : reward.stock_quantity}
+                      </span>
                     </div>
                     {!canAfford(reward.points_required) && (
                       <span className="text-xs text-red-500">
