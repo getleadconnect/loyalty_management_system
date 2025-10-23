@@ -170,14 +170,21 @@ const RewardsManagement = () => {
 
   const validateForm = () => {
     const errors = {};
-    
+
     if (!formData.name.trim()) errors.name = 'Reward name is required';
     if (!formData.description.trim()) errors.description = 'Description is required';
     if (!formData.points_required || formData.points_required <= 0) {
       errors.points_required = 'Valid points value is required';
     }
     if (!formData.category.trim()) errors.category = 'Category is required';
-    
+
+    // Validate stock quantity (required field)
+    if (formData.stock_quantity === '' || formData.stock_quantity === null || formData.stock_quantity === undefined) {
+      errors.stock_quantity = 'Stock quantity is required';
+    } else if (formData.stock_quantity < 0) {
+      errors.stock_quantity = 'Stock quantity cannot be negative';
+    }
+
     if (formData.valid_from && formData.valid_until) {
       if (new Date(formData.valid_from) > new Date(formData.valid_until)) {
         errors.valid_until = 'End date must be after start date';
@@ -194,7 +201,7 @@ const RewardsManagement = () => {
         errors.image = 'Image size must be less than 2MB';
       }
     }
-    
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -415,8 +422,8 @@ const RewardsManagement = () => {
               </div>
               <div className="flex items-center">
                 <span className="text-gray-500">Stock:</span>
-                <span className={`ml-1 font-medium ${reward.stock_quantity && reward.stock_quantity <= 5 ? 'text-orange-600' : ''}`}>
-                  {reward.stock_quantity !== null ? `${reward.stock_quantity}${reward.stock_quantity <= 5 ? ' (Low)' : ''}` : 'Unlimited'}
+                <span className={`ml-1 font-medium ${reward.stock_quantity === 0 ? 'text-red-600' : reward.stock_quantity && reward.stock_quantity <= 5 ? 'text-orange-600' : ''}`}>
+                  {reward.stock_quantity === 0 ? 'No Stock' : reward.stock_quantity !== null ? `${reward.stock_quantity}${reward.stock_quantity <= 5 ? ' (Low)' : ''}` : 'Unlimited'}
                 </span>
               </div>
               <div className="flex items-center">
@@ -532,14 +539,42 @@ const RewardsManagement = () => {
                 </div>
 
                 <div className="col-span-1 md:col-span-1">
-                  <Label htmlFor="stock_quantity">Stock Quantity (Optional)</Label>
+                  <Label htmlFor="stock_quantity">Stock Quantity *</Label>
                   <Input
                     id="stock_quantity"
                     type="number"
                     value={formData.stock_quantity}
-                    onChange={(e) => setFormData({...formData, stock_quantity: e.target.value})}
-                    placeholder="Leave empty for unlimited"
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData({...formData, stock_quantity: value});
+
+                      // Real-time validation
+                      if (value === '' || value === null) {
+                        setFormErrors({...formErrors, stock_quantity: 'Stock quantity is required'});
+                      } else if (parseInt(value) < 0) {
+                        setFormErrors({...formErrors, stock_quantity: 'Stock quantity cannot be negative'});
+                      } else {
+                        const newErrors = {...formErrors};
+                        delete newErrors.stock_quantity;
+                        setFormErrors(newErrors);
+                      }
+                    }}
+                    onBlur={(e) => {
+                      const value = e.target.value;
+                      if (value === '' || value === null) {
+                        setFormErrors({...formErrors, stock_quantity: 'Stock quantity is required'});
+                      }
+                    }}
+                    placeholder="Enter stock quantity"
+                    required
+                    min="0"
+                    step="1"
+                    className={formErrors.stock_quantity ? 'border-red-500' : ''}
                   />
+                  {formErrors.stock_quantity && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.stock_quantity}</p>
+                  )}
+                  <p className="text-gray-500 text-xs mt-1">Enter 0 for "No Stock"</p>
                 </div>
 
                 <div className="col-span-1 md:col-span-1">
@@ -838,7 +873,9 @@ const RewardsManagement = () => {
                         </td>
                         <td className="p-3 font-medium">{reward.points_required}</td>
                         <td className="p-3">
-                          {reward.stock_quantity !== null ? (
+                          {reward.stock_quantity === 0 ? (
+                            <span className="text-red-600 font-medium">No Stock</span>
+                          ) : reward.stock_quantity !== null ? (
                             <span className={reward.stock_quantity <= 5 ? 'text-orange-600 font-medium' : ''}>
                               {reward.stock_quantity}
                               {reward.stock_quantity <= 5 && ' (Low)'}
